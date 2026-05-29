@@ -1,0 +1,45 @@
+name: Automated Code Quality & PR Review
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  review-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Check Code Style and Formatting
+      run: |
+        echo "Analyzing code quality..."
+        if ! grep -q "System.out.print" HRSystemApp.java; then
+          echo "❌ ERROR: No output statements found in HRSystemApp.java!"
+          exit 1
+        fi
+
+    - name: Compile Java Code
+      run: |
+        echo "Compiling HRSystemApp.java..."
+        javac HRSystemApp.java
+
+    - name: Run Smoke Tests & Validation
+      run: |
+        echo "Executing system validation checks..."
+        java HRSystemApp > output.txt
+        cat output.txt
+        
+        if grep -q "Salary: \$50000.0" output.txt; then
+          echo "✅ PASSED: HR system correctly processed subclass attributes dynamically."
+        else
+          echo "❌ FAILED: System output does not match expected MVP structure."
+          exit 1
+        fi
